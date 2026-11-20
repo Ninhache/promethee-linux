@@ -1,0 +1,37 @@
+name: Works on my distro
+description: Report a distro where Promethee for Linux runs (or partly runs)
+title: "Distro report: "
+body:
+  - type: input
+    id: distro
+    attributes:
+      label: Distro and version
+      placeholder: Arch Linux, Ubuntu 24.10, Fedora 41
+    validations:
+      required: true
+  - type: dropdown
+    id: session
+    attributes:
+      label: Session
+      options: [X11, Wayland]
+    validations:
+      required: true
+  - type: input
+    id: desktop
+    attributes:
+      label: Desktop
+      placeholder: GNOME, KDE, sway, i3, Hyprland
+  - type: checkboxes
+    id: works
+    attributes:
+      label: What works
+      options:
+        - label: Build finished
+        - label: App starts
+        - label: Sign in
+        - label: Still signed in after a restart
+        - label: Focus session
+  - type: textarea
+    id: notes
+    attributes:
+      label: Anything broken or different (optional)

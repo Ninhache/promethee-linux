@@ -10,6 +10,10 @@ REPO=promethee-io/Promethee-releases
 ROOT=$(cd "$(dirname "$0")" && pwd)
 RES=Promethee.app/Contents/Resources
 ELECTRON_PLIST='Promethee.app/Contents/Frameworks/Electron Framework.framework/Versions/A/Resources/Info.plist'
+# Exact versions, so npx neither runs whatever is newest on npm nor a global install that may not
+# support this Node (node-gyp 13 needs Node 22.22+). Both of these run on Node 20.17+ and 22.
+ASAR=@electron/asar@3.4.1
+NODE_GYP=node-gyp@12.4.0
 
 log() { echo "==> $*"; }
 
@@ -48,7 +52,7 @@ fetch_mac_app() {
   log "Electron $ELECTRON"
 
   log "Extracting app.asar"
-  npx -y @electron/asar extract "$RES/app.asar" app
+  npx -y "$ASAR" extract "$RES/app.asar" app
 }
 
 # Drops macOS-only modules and recompiles SQLite for Linux.
@@ -59,7 +63,7 @@ patch_natives() {
 
   local sqlite=app/node_modules/better-sqlite3-multiple-ciphers
   rm -rf "${sqlite:?}/bin" "${sqlite:?}/build"
-  (cd "$sqlite" && npx -y node-gyp rebuild --release \
+  (cd "$sqlite" && npx -y "$NODE_GYP" rebuild --release \
     --runtime=electron --target="$ELECTRON" --arch="$ARCH" --dist-url=https://electronjs.org/headers)
   rm -rf "$sqlite/build/Release/obj" "$sqlite/build/Release/obj.target" "$sqlite/build/Release/.deps"
 }

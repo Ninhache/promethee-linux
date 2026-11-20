@@ -52,8 +52,29 @@ Promethee turns your focus sessions into a visual history of your progress. It s
 and Linux users have been left at the door. Not anymore.
 
 <p align="center">
-  <img alt="Promethee running on Debian 13" src=".github/assets/screenshot.jpg" width="100%">
+  <img alt="Promethee signed in on Debian 13, showing the feed" src=".github/assets/screenshot.jpg" width="100%">
 </p>
+
+<table>
+  <tr>
+    <td width="33%" valign="top">
+      <img alt="Explore tab on Linux" src=".github/assets/app-explore.jpg"><br />
+      <strong>🔎 Explore</strong><br />
+      <sub>Guilds, people and the apps the community focuses with</sub>
+    </td>
+    <td width="33%" valign="top">
+      <img alt="Leaderboard on Linux" src=".github/assets/app-rank.jpg"><br />
+      <strong>🏆 Rank</strong><br />
+      <sub>Live season leaderboard and your league</sub>
+    </td>
+    <td width="33%" valign="top">
+      <img alt="Analytics tab on Linux" src=".github/assets/app-analytics.jpg"><br />
+      <strong>📊 Analytics</strong><br />
+      <sub>Your week, your goals, your streak</sub>
+    </td>
+  </tr>
+</table>
+<p align="center"><sub>A real account, signed in on Debian 13. Other members' names and posts are blurred.</sub></p>
 
 ## ⚡ Quick start
 
@@ -101,7 +122,11 @@ Nothing from Promethee lives in this repo: everything is downloaded from Prometh
 
 | Feature | Status |
 |---|---|
-| Login, focus sessions, sync, leaderboards | ✅ |
+| Sign in with email code, session kept after a restart | ✅ |
+| Feed, Explore, Rank, Tasks, Analytics | ✅ live data from your account |
+| Direct messages (realtime) | ✅ |
+| Guild chat rooms | ⚠️ list loads, live updates stuck on "Reconnecting…" ([help us check](../../issues)) |
+| Starting a focus session | ❔ not tested yet |
 | Local database (SQLite, encrypted) | ✅ recompiled for Linux |
 | Active window tracking & app blocker | ⚠️ X11 only (via `xprop`), not Wayland yet |
 | macOS vibrancy, Windows virtual desktops | ➖ not applicable |

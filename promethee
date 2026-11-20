@@ -7,6 +7,7 @@ set -euo pipefail
 ROOT=$(cd "$(dirname "$(readlink -f "$0")")" && pwd)
 REPO=promethee-io/Promethee-releases
 CURRENT=$ROOT/dist/current
+RETRY_FAILED_AFTER_MIN=1440   # minutes before a failed update is tried again
 
 latest_version() {
   local url
@@ -28,7 +29,9 @@ update() {
   local latest previous
   latest=$(latest_version) || return 0                    # offline: try at next launch
   [ -n "$latest" ] && [ "$latest" != "$(cat "$CURRENT/VERSION" 2>/dev/null)" ] || return 0
-  [ -e "$ROOT/build/$latest.failed" ] && return 0         # don't retry a broken release on every launch
+  # A failed build is retried once its marker is a day old: a broken release isn't rebuilt on
+  # every launch, and a transient failure (network, full disk) doesn't block that release forever.
+  [ -n "$(find "$ROOT/build/$latest.failed" -mmin -$RETRY_FAILED_AFTER_MIN 2>/dev/null)" ] && return 0
   previous=$(readlink -f "$CURRENT")
 
   if "$ROOT/build.sh" "$latest" > "$ROOT/build/update.log" 2>&1; then

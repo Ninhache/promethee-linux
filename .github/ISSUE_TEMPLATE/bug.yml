@@ -1,0 +1,42 @@
+name: Build or launch fails
+description: ./promethee or build.sh stopped with an error, or the app misbehaves
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: Short answers are fine. Paste the error, not a summary of it.
+  - type: textarea
+    id: command
+    attributes:
+      label: Command you ran
+      placeholder: ./promethee
+      render: shell
+    validations:
+      required: true
+  - type: textarea
+    id: error
+    attributes:
+      label: First error lines
+      description: From the terminal, or build/update.log for a background update. 20 lines around the first `ERR` or `error` are enough.
+      render: text
+    validations:
+      required: true
+  - type: textarea
+    id: env
+    attributes:
+      label: Environment
+      description: 'Paste the output of: `uname -m; node -v; npm -v; g++ --version | head -1; grep PRETTY /etc/os-release; echo "$XDG_SESSION_TYPE $XDG_CURRENT_DESKTOP"`'
+      render: text
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Promethee version
+      description: cat dist/current/VERSION, or the version build.sh printed
+      placeholder: 1.4.2
+  - type: textarea
+    id: tried
+    attributes:
+      label: Already tried (optional)
+      placeholder: Re-ran ./promethee, deleted build/

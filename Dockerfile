@@ -2,8 +2,11 @@
 #   docker build -t promethee-linux .                          (latest release)
 #   docker build --build-arg VERSION=1.4.1 -t promethee-linux .
 #   docker run --rm --shm-size=1g promethee-linux   (Chromium needs more than the default 64MB /dev/shm)
-FROM node:22-trixie
+# Debian 13 with Node from apt (20.x, npm 9): exactly what the README tells users to install.
+# The node:22 image hid a real break here (unpinned node-gyp 13 needs Node 22.22+).
+FROM debian:trixie
 RUN apt-get update && apt-get install -y --no-install-recommends \
+      ca-certificates curl nodejs npm \
       unzip python3 make g++ xvfb xauth x11-utils \
       libnss3 libgtk-3-0 libgbm1 libasound2t64 libxss1 libsecret-1-0 \
     && rm -rf /var/lib/apt/lists/*

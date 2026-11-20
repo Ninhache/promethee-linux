@@ -62,8 +62,15 @@ ensure_sandbox() {
 
 main() {
   if [ ! -e "$CURRENT" ]; then
-    echo "First run: building Promethee for Linux, this takes a few minutes."
-    "$ROOT/build.sh"
+    # Same lock as update(): a second launch waits for the first build instead of starting another.
+    mkdir -p "$ROOT/build"
+    exec 9>"$ROOT/build/.update.lock"
+    flock 9
+    if [ ! -e "$CURRENT" ]; then
+      echo "First run: building Promethee for Linux, this takes a few minutes."
+      "$ROOT/build.sh"
+    fi
+    exec 9>&-   # release it: the app exec'd below would otherwise hold it and block every update
   else
     # Detached from the terminal so closing it doesn't kill an update halfway.
     ( trap '' HUP; update ) </dev/null >/dev/null 2>&1 &

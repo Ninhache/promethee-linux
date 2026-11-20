@@ -17,6 +17,8 @@ log() { echo "==> $*"; }
 detect_version() {
   VERSION=${1:-$(curl -fsSo /dev/null -w '%{redirect_url}' "https://github.com/$REPO/releases/latest")}
   VERSION=${VERSION##*/v}
+  # It ends up in paths that get rm -rf'd: refuse anything but a plain version (same check as CI).
+  [[ $VERSION =~ ^[0-9]+(\.[0-9]+)*$ ]] || { echo "Unexpected Promethee version: '$VERSION'" >&2; exit 1; }
 }
 
 # Sets ARCH in Electron's naming (x64 / arm64).

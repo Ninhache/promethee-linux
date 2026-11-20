@@ -1,0 +1,74 @@
+#!/usr/bin/env bash
+# Starts Promethee for Linux.
+# First run: builds it. Later runs: start right away, and update in the background
+# when Promethee ships a new release (used from the next launch on).
+set -euo pipefail
+
+ROOT=$(cd "$(dirname "$(readlink -f "$0")")" && pwd)
+REPO=promethee-io/Promethee-releases
+CURRENT=$ROOT/dist/current
+
+latest_version() {
+  local url
+  url=$(curl -fsSo /dev/null -w '%{redirect_url}' --max-time 10 "https://github.com/$REPO/releases/latest") || return 1
+  echo "${url##*/v}"
+}
+
+notify() {
+  echo "promethee-linux: $*" >&2
+  if command -v notify-send >/dev/null; then notify-send -a Promethee Promethee "$*" || true; fi
+}
+
+# Builds the latest release next to the current one, switches to it, keeps the previous one
+# (it may still be running) and deletes anything older.
+update() {
+  mkdir -p "$ROOT/build"
+  exec 9>"$ROOT/build/.update.lock"
+  flock -n 9 || return 0                                  # an update is already running
+  local latest previous
+  latest=$(latest_version) || return 0                    # offline: try at next launch
+  [ -n "$latest" ] && [ "$latest" != "$(cat "$CURRENT/VERSION" 2>/dev/null)" ] || return 0
+  [ -e "$ROOT/build/$latest.failed" ] && return 0         # don't retry a broken release on every launch
+  previous=$(readlink -f "$CURRENT")
+
+  if "$ROOT/build.sh" "$latest" > "$ROOT/build/update.log" 2>&1; then
+    for dir in "$ROOT"/dist/promethee-*; do
+      [ "$dir" = "$(readlink -f "$CURRENT")" ] || [ "$dir" = "$previous" ] || rm -rf "$dir"
+    done
+    notify "Promethee $latest is installed. Restart the app to use it."
+  else
+    touch "$ROOT/build/$latest.failed"
+    notify "Updating to Promethee $latest failed, see $ROOT/build/update.log"
+  fi
+}
+
+# Chromium's sandbox uses unprivileged user namespaces. Where the system blocks them
+# (Ubuntu 23.10+ via AppArmor, some hardened kernels) it needs its setuid helper,
+# which only root can set up, so we ask once per build.
+ensure_sandbox() {
+  local helper
+  helper=$(readlink -f "$CURRENT")/chrome-sandbox
+  [ "$(cat /proc/sys/kernel/apparmor_restrict_unprivileged_userns 2>/dev/null)" = 1 ] \
+    || [ "$(cat /proc/sys/kernel/unprivileged_userns_clone 2>/dev/null)" = 0 ] \
+    || return 0
+  [ "$(stat -c %u:%a "$helper")" = 0:4755 ] && return 0
+
+  echo "Promethee needs admin rights once to set up Chromium's sandbox."
+  local fix='chown root:root "$1" && chmod 4755 "$1"'
+  if command -v pkexec >/dev/null; then pkexec /bin/sh -c "$fix" sh "$helper"
+  else sudo /bin/sh -c "$fix" sh "$helper"; fi
+}
+
+main() {
+  if [ ! -e "$CURRENT" ]; then
+    echo "First run: building Promethee for Linux, this takes a few minutes."
+    "$ROOT/build.sh"
+  else
+    # Detached from the terminal so closing it doesn't kill an update halfway.
+    ( trap '' HUP; update ) </dev/null >/dev/null 2>&1 &
+  fi
+  ensure_sandbox
+  exec "$CURRENT/promethee" "$@"
+}
+
+main "$@"

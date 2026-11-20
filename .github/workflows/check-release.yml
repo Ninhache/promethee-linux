@@ -1,0 +1,103 @@
+# Daily: when Promethee ships a new release, build and smoke-test it on Linux (x64 + arm64).
+# Nothing is published: the built app never leaves the runner. The result goes to
+# .github/status.json (the README badge) and, when it breaks, to an issue.
+name: Check new Promethee release
+
+on:
+  schedule:
+    - cron: "17 6 * * *"
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Promethee version to test (empty = latest)"
+        required: false
+  push:
+    branches: [main]
+    paths: [build.sh, promethee, Dockerfile, .github/workflows/check-release.yml]
+
+permissions:
+  contents: write
+  issues: write
+
+concurrency:
+  group: check-release
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      run: ${{ steps.version.outputs.run }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: version
+        env:
+          REQUESTED: ${{ inputs.version }}
+          EVENT: ${{ github.event_name }}
+        run: |
+          latest=$REQUESTED
+          if [ -z "$latest" ]; then
+            url=$(curl -fsSo /dev/null -w '%{redirect_url}' https://github.com/promethee-io/Promethee-releases/releases/latest)
+            latest=${url##*/v}
+          fi
+          [[ $latest =~ ^[0-9]+(\.[0-9]+)*$ ]] || { echo "Unexpected version: '$latest'"; exit 1; }
+          # The badge message is "<version>" or "<version> (broken)".
+          tested=$(jq -r '.message | split(" ")[0]' .github/status.json 2>/dev/null || true)
+          echo "latest=$latest, last tested=$tested"
+          echo "version=$latest" >> "$GITHUB_OUTPUT"
+          # The daily run only tests versions it hasn't seen; manual runs and code changes always test.
+          if [ "$EVENT" != schedule ] || [ "$latest" != "$tested" ]; then echo "run=true" >> "$GITHUB_OUTPUT"; fi
+
+  test:
+    needs: check
+    if: needs.check.outputs.run == 'true'
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: x64
+            runner: ubuntu-24.04
+          - arch: arm64
+            runner: ubuntu-24.04-arm
+    name: test (${{ matrix.arch }})
+    runs-on: ${{ matrix.runner }}
+    env:
+      VERSION: ${{ needs.check.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build Promethee ${{ env.VERSION }} for Linux
+        run: docker build --build-arg VERSION="$VERSION" -t promethee-linux .
+      - name: Smoke test
+        run: docker run --rm --shm-size=1g promethee-linux
+
+  report:
+    needs: [check, test]
+    if: always() && needs.check.outputs.run == 'true' && (needs.test.result == 'success' || needs.test.result == 'failure')
+    runs-on: ubuntu-latest
+    env:
+      VERSION: ${{ needs.check.outputs.version }}
+      RESULT: ${{ needs.test.result }}
+      RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Update the badge
+        run: |
+          if [ "$RESULT" = success ]; then message=$VERSION color=brightgreen; else message="$VERSION (broken)" color=red; fi
+          jq -n --arg m "$message" --arg c "$color" \
+            '{schemaVersion: 1, label: "works with promethee", message: $m, color: $c, labelColor: "1c1917"}' > .github/status.json
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add .github/status.json
+          git diff --cached --quiet || { git commit -m "Promethee $VERSION: $RESULT on Linux"; git push; }
+      - name: Open an issue if it broke
+        if: needs.test.result == 'failure'
+        run: |
+          title="Promethee $VERSION breaks the Linux build"
+          existing=$(gh issue list --state open --search "\"$title\" in:title" --json number --jq length)
+          [ "$existing" = 0 ] || exit 0
+          gh issue create --title "$title" --body "The daily check could not build or start Promethee $VERSION on Linux.
+
+          Logs: $RUN_URL
+
+          Users who run \`./promethee\` keep their current version: a failed update is not retried and does not replace it."

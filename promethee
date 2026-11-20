@@ -46,6 +46,7 @@ update() {
 # (Ubuntu 23.10+ via AppArmor, some hardened kernels) it needs its setuid helper,
 # which only root can set up, so we ask once per build.
 ensure_sandbox() {
+  case " $* " in *" --no-sandbox "*) return 0 ;; esac   # sandbox turned off: nothing to set up
   local helper
   helper=$(readlink -f "$CURRENT")/chrome-sandbox
   [ "$(cat /proc/sys/kernel/apparmor_restrict_unprivileged_userns 2>/dev/null)" = 1 ] \
@@ -67,7 +68,7 @@ main() {
     # Detached from the terminal so closing it doesn't kill an update halfway.
     ( trap '' HUP; update ) </dev/null >/dev/null 2>&1 &
   fi
-  ensure_sandbox
+  ensure_sandbox "$@"
   exec "$CURRENT/promethee" "$@"
 }
 

@@ -29,7 +29,7 @@ jobs:
       version: ${{ steps.version.outputs.version }}
       run: ${{ steps.version.outputs.run }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - id: version
         env:
           REQUESTED: ${{ inputs.version }}
@@ -64,7 +64,7 @@ jobs:
     env:
       VERSION: ${{ needs.check.outputs.version }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Build Promethee ${{ env.VERSION }} for Linux
         run: docker build --build-arg VERSION="$VERSION" -t promethee-linux .
       - name: Smoke test
@@ -80,7 +80,7 @@ jobs:
       RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
       GH_TOKEN: ${{ github.token }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Update the badge
         run: |
           if [ "$RESULT" = success ]; then message=$VERSION color=brightgreen; else message="$VERSION (broken)" color=red; fi
@@ -101,3 +101,10 @@ jobs:
           Logs: $RUN_URL
 
           Users who run \`./promethee\` keep their current version: a failed update is not retried and does not replace it."
+      - name: Close the issue once it works again
+        if: needs.test.result == 'success'
+        run: |
+          title="Promethee $VERSION breaks the Linux build"
+          for n in $(gh issue list --state open --search "\"$title\" in:title" --json number --jq '.[].number'); do
+            gh issue close "$n" --comment "Fixed: Promethee $VERSION now builds and starts on Linux ($RUN_URL)."
+          done

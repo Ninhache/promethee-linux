@@ -92,6 +92,8 @@ and the previous one is kept in case you need to go back.
 
 <sub>Needs <code>curl</code>, <code>unzip</code>, <code>node</code>, <code>python3</code>, <code>make</code> and <code>g++</code> 14+ (Electron 43's headers need a recent compiler). On Ubuntu 23.10+, Chromium's sandbox needs admin rights once per version: <code>./promethee</code> asks for your password when that's the case.</sub>
 
+<sub>Promethee keeps you signed in through your desktop keyring. GNOME and KDE have one out of the box; on sway, i3 or Hyprland, run <code>gnome-keyring</code> (or KeePassXC's Secret Service) and <code>./promethee</code> takes care of the rest. Without a keyring you'll have to sign in again at each launch.</sub>
+
 ## 🛠️ How it works
 
 Promethee is an Electron app, so almost all of it already runs on Linux. `build.sh` takes the official
@@ -123,10 +125,10 @@ Nothing from Promethee lives in this repo: everything is downloaded from Prometh
 | Feature | Status |
 |---|---|
 | Sign in with email code | ✅ |
-| Staying signed in after a restart | ⚠️ needs a desktop keyring (GNOME Keyring or KWallet), being verified |
+| Staying signed in after a restart | ✅ stored in your desktop keyring (GNOME Keyring, KWallet, KeePassXC…) |
 | Feed, Explore, Rank, Tasks, Analytics | ✅ live data from your account |
 | Direct messages (realtime) | ✅ |
-| Guild chat rooms | ⚠️ list loads, live updates stuck on "Reconnecting…" ([help us check](../../issues)) |
+| Guild chat rooms (realtime) | ✅ |
 | Starting a focus session | ❔ not tested yet |
 | Local database (SQLite, encrypted) | ✅ recompiled for Linux |
 | Active window tracking & app blocker | ⚠️ X11 only (via `xprop`), not Wayland yet |

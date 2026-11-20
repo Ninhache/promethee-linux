@@ -58,7 +58,7 @@ patch_natives() {
   rm -rf app/node_modules/mac-vibrancy
 
   local sqlite=app/node_modules/better-sqlite3-multiple-ciphers
-  rm -rf "$sqlite/bin" "$sqlite/build"
+  rm -rf "${sqlite:?}/bin" "${sqlite:?}/build"
   (cd "$sqlite" && npx -y node-gyp rebuild --release \
     --runtime=electron --target="$ELECTRON" --arch="$ARCH" --dist-url=https://electronjs.org/headers)
   rm -rf "$sqlite/build/Release/obj" "$sqlite/build/Release/obj.target" "$sqlite/build/Release/.deps"

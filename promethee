@@ -69,7 +69,13 @@ main() {
     ( trap '' HUP; update ) </dev/null >/dev/null 2>&1 &
   fi
   ensure_sandbox "$@"
-  exec "$CURRENT/promethee" "$@"
+
+  # Chromium only uses the system keyring on desktops it recognizes (GNOME...). Elsewhere (sway,
+  # i3, Hyprland) it falls back to no encryption, and Promethee then can't keep you signed in.
+  # KDE already gets KWallet; everyone else is pointed at the Secret Service (GNOME Keyring, KeePassXC...).
+  local keyring=()
+  [[ ${XDG_CURRENT_DESKTOP:-} == *KDE* || " $* " == *" --password-store="* ]] || keyring=(--password-store=gnome-libsecret)
+  exec "$CURRENT/promethee" "${keyring[@]}" "$@"
 }
 
 main "$@"

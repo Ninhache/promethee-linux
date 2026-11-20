@@ -122,7 +122,8 @@ Nothing from Promethee lives in this repo: everything is downloaded from Prometh
 
 | Feature | Status |
 |---|---|
-| Sign in with email code, session kept after a restart | ✅ |
+| Sign in with email code | ✅ |
+| Staying signed in after a restart | ⚠️ needs a desktop keyring (GNOME Keyring or KWallet), being verified |
 | Feed, Explore, Rank, Tasks, Analytics | ✅ live data from your account |
 | Direct messages (realtime) | ✅ |
 | Guild chat rooms | ⚠️ list loads, live updates stuck on "Reconnecting…" ([help us check](../../issues)) |

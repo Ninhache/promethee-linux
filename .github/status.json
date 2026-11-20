@@ -1,1 +1,7 @@
-{"schemaVersion":1,"label":"works with promethee","message":"1.4.2","color":"brightgreen","labelColor":"1c1917"}
+{
+  "schemaVersion": 1,
+  "label": "works with promethee",
+  "message": "1.4.2 (broken)",
+  "color": "red",
+  "labelColor": "1c1917"
+}

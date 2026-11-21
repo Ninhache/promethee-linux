@@ -4,7 +4,7 @@ name: AUR package
 
 on:
   pull_request:
-    paths: [build.sh, promethee, packaging/aur/**, .github/workflows/aur.yml]
+    paths: [build.sh, promethee, "patches/**", packaging/aur/**, .github/workflows/aur.yml]
   workflow_call:
     inputs:
       version:

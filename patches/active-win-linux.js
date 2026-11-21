@@ -1,15 +1,11 @@
 'use strict';
-// Replaces active-win's lib/linux.js (build.sh moves the original to x11.js).
-// xprop only sees XWayland windows, so on Wayland the focused window is asked to the compositor.
-// Supported: Hyprland (hyprctl) and sway (swaymsg). Anything else falls back to the X11 code.
+// active-win only asks X11, which can't see native Wayland windows: ask Hyprland or sway instead.
 const childProcess = require('child_process');
 const fs = require('fs');
 const x11 = require('./x11.js');
 
-// The app polls every few seconds: a hung compositor call must not stall it.
 const TIMEOUT_MS = 1000;
 
-// Hyprland: `hyprctl activewindow -j` prints the focused window, or {} when there is none.
 const fromHyprland = w => w && w.pid > 0 ? {
 	id: Number.parseInt(w.address, 16),
 	title: w.title,
@@ -18,7 +14,6 @@ const fromHyprland = w => w && w.pid > 0 ? {
 	bounds: {x: w.at[0], y: w.at[1], width: w.size[0], height: w.size[1]}
 } : undefined;
 
-// sway: walk `swaymsg -t get_tree` to the focused leaf. Native apps have app_id, XWayland ones a class.
 const fromSway = tree => {
 	const stack = [tree];
 	while (stack.length > 0) {
@@ -45,7 +40,6 @@ const compositor = () => {
 	}
 };
 
-// Same shape as active-win's X11 result, which is what the app reads (owner.name, owner.path, title).
 const toResult = (w, memoryUsage, path) => ({
 	platform: 'linux',
 	title: w.title || null,
@@ -80,7 +74,6 @@ module.exports = async options => {
 		const w = c.parse(JSON.parse(stdout));
 		return w && toResult(w, memoryUsageSync(w.pid), pathSync(w.pid));
 	} catch {
-		// Compositor tool missing or failed: XWayland windows are still visible to xprop.
 		return x11(options);
 	}
 };
